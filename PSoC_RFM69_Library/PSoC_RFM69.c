@@ -18,7 +18,7 @@
 #include "PSoC_RFM69.h"
 #include "PSoC_RFM69_Config.h"
 
-#define mRFM69_WaitModeReady()  while((RFM69_Register_Read(REG_IRQFLAGS1) & 0x80) == 0) {}
+#define mRFM69_WaitModeReady()  while((RFM69_Register_Read(REG_IRQFLAGS_1) & 0x80) == 0) {}
 
 uint8 RFM69_GetRSSI();
 uint8 RFM69_Register_Read(uint8 reg_addr);
@@ -29,36 +29,71 @@ uint8 RFM69_Start()
     uint16 loop;
     
     uint8 RFM69_CONFIG[][2] = {
-        {REG_OPMODE, 0b00000100},			// Start in standby mode.
-        {REG_DATAMODUL, 0b00000000},        // Packetmode, modulation = FSK, no shaping.  
-        {REG_BITRATEMSB, 0b00110100},		// Bit rate = 2400 bauds.
-        {REG_BITRATELSB, 0b00010000},
-        {REG_FDEVMSB, 0b00000010},			// Frecuency deviation = 35Khz  
-        {REG_FDEVLSB, 0b01000001},
-        {REG_FRFMSB, 0b01101100},			// Carrier frequency = 433.749 Mhz
-        {REG_FRFMID, 0b10000000},
-        {REG_FRFLSB, 0b00000000},
-        {REG_PALEVEL, 0b10011111},			// PA0 = on, max power.
+            /* Start in standby mode. */
+        {REG_OPMODE, 0b00000100},
+            /* Packed mode, modulation = FSK, no shaping. */
+        {REG_DATAMODUL, 0b00000000},
+            /* Bitrate set in config. */
+        {REG_BITRATEMSB, BITRATE_MSB}, // BITRATE_MSB},	
+        {REG_BITRATELSB, BITRATE_LSB}, //BITRATE_LSB},
+            /* Frequency deviation fixed in configuration. */
+        {REG_FDEVMSB, FREQDEV_MSB},  
+        {REG_FDEVLSB, FREQDEV_LSB},
+            /* Frequency carrier fixed in configuration. */
+        {REG_FRFMSB, FREQUENCY_MSB},
+        {REG_FRFMID, FREQUENCY_MID},
+        {REG_FRFLSB, FREQUENCY_LSB},
+            /* PA = ON. */
+        {REG_PALEVEL, 0b10000000 | POWER_LEVEL},
         {REG_OCP, 0b00001111},				// OCP Enabled
         {REG_LNA, 0b10001000},				// Input impedance = 200ohm, gain = internal AGC.  
         {REG_RXBW, 0b01010010},
-        {REG_DIOMAPPING1, 0b01000100},		
-        {REG_PREAMBLEMSB, 0b00000000},		// Preamble = 5 bytes.   
+        {REG_DIOMAPPING_1, 0b01000100},		
+            /* Preamble set to 5 bytes. */
+        {REG_PREAMBLEMSB, 0b00000000},  
         {REG_PREAMBLELSB, 0b00000101},
-        {REG_SYNCCONFIG, 0b10010000},		// Sync word enabled, FIFO filling if sync address, size = 3(2+1), tolerated error bits = 0.
-        {REG_SYNCVALUE1, 0xAA},				// Sync bytes.
-        {REG_SYNCVALUE2, 0x2D},
-        {REG_SYNCVALUE3, 0xD4},
+            /* Sync. word generation and detection allways enabled. FifoFillCondition = if SyncAddress interrupt ocurs. */
+        {REG_SYNCCONFIG, 0b10000000 | ((SYNC_SIZE - 1) << 3) | SYNC_BITS_TOLERANCE},
+        {REG_SYNCVALUE_1, SYNC_VALUE_1},
+        {REG_SYNCVALUE_2, SYNC_VALUE_2},
+        {REG_SYNCVALUE_3, SYNC_VALUE_3},
+        {REG_SYNCVALUE_4, SYNC_VALUE_4},
+        {REG_SYNCVALUE_5, SYNC_VALUE_5},
+        {REG_SYNCVALUE_6, SYNC_VALUE_6},
+        {REG_SYNCVALUE_7, SYNC_VALUE_7},
+        {REG_SYNCVALUE_8, SYNC_VALUE_8},       
+            /* Node address, broadcast address, packetconfig1 and payload length set in config file. */
         {REG_NODEADRS, NODE_ADDRESS},
         {REG_BROADCASTADRS, BROADCAST_ADDRESS},
-        {REG_PACKETCONFIG1, PACKETCONFIG1_VALUE},
-        {REG_PAYLOADLENGTH, 0b00000011},	// Length of payload = 3
-        {REG_FIFOTHRESH, 0b10010101}, 		// Fifo threshold = 21. Tx when FIFO not empty.     
+            /* Packet config 1. Depends on configuration values. */
+        {REG_PACKETCONFIG_1, (ADDRESS_FILTERING << 1) | (CRC_AUTOCLEAR << 3) | (CRC << 4) | (PACKET_LENGTH_MODE << 7)},
+            /* Payload length. Depends on configuration values. */
+        {REG_PAYLOADLENGTH, PAYLOAD_LENGTH},
+            /* Start TX when there is at least one byte in FIFO. FIFO threshold set to PAYLOAD_LENGTH - 1. */
+        {REG_FIFOTHRESH, 0b10000000 | (PAYLOAD_LENGTH - 1)},  
         {REG_TESTLNA, 0b00011011},			// Normal sensitivity
-        {REG_TESTPA1, 0b01010101},			// Normal mode.
-        {REG_TESTPA2, 0b01110000},			// Normal mode.
+        {REG_TESTPA_1, 0b01010101},			// Normal mode.
+        {REG_TESTPA_2, 0b01110000},			// Normal mode.
         {REG_TESTDAGC, 0b00110000},			// Improved margin.
-        {REG_PACKETCONFIG2, 0b00010010}
+            /* InterPacketRxDelay. AutoRxRestartOn = 1 = Rx automatically restarted after InterPacketRxDelay. No AES encryption. */
+        {REG_PACKETCONFIG_2, 0b00010010 | AES_ENCRYPTION},
+            /* AES Keys. */
+        {REG_AESKEY_1, AES_KEY_1},
+        {REG_AESKEY_2, AES_KEY_2},
+        {REG_AESKEY_3, AES_KEY_3},
+        {REG_AESKEY_4, AES_KEY_4},
+        {REG_AESKEY_5, AES_KEY_5},
+        {REG_AESKEY_6, AES_KEY_6},
+        {REG_AESKEY_7, AES_KEY_7},
+        {REG_AESKEY_8, AES_KEY_8},
+        {REG_AESKEY_9, AES_KEY_9},
+        {REG_AESKEY_10, AES_KEY_10},
+        {REG_AESKEY_11, AES_KEY_11},
+        {REG_AESKEY_12, AES_KEY_12},
+        {REG_AESKEY_13, AES_KEY_13},
+        {REG_AESKEY_14, AES_KEY_14},
+        {REG_AESKEY_15, AES_KEY_15},
+        {REG_AESKEY_16, AES_KEY_16}
     };
     
     if (!RFM69_CheckPresence()) return 0;
@@ -92,16 +127,69 @@ uint8 RFM69_CheckPresence()
 	return 1;
 }
 
-void RFM69_SetAddressFiltering(uint8 filtering, uint8 nodeaddress, uint8 broadcastaddress)
+uint8 RFM69_SetAddressFiltering(uint8 addressfiltering, uint8 nodeaddress, uint8 broadcastaddress)
 {
-    uint8 registervalue = RFM69_Register_Read(REG_PACKETCONFIG1);
+    uint8 registervalue;
     
-    registervalue &= 0xF9;
-    registervalue |= (filtering << 1);
+    if (addressfiltering > 2) return 0;
     
-    RFM69_Register_Write(REG_PACKETCONFIG1, registervalue);
-    RFM69_Register_Write(REG_NODEADRS, nodeaddress);
-    RFM69_Register_Write(REG_BROADCASTADRS, broadcastaddress);
+    registervalue = RFM69_Register_Read(REG_PACKETCONFIG_1);
+    registervalue = (registervalue & 0xF9) | (addressfiltering << 1);
+    
+    RFM69_Register_Write(REG_PACKETCONFIG_1, registervalue);
+    
+    if (addressfiltering != 0)
+    {
+        RFM69_Register_Write(REG_NODEADRS, nodeaddress);
+        RFM69_Register_Write(REG_BROADCASTADRS, broadcastaddress);
+    }
+    
+    return 1;
+}
+
+void RFM69_SetPayloadLength(uint8 plength)
+{
+    RFM69_Register_Write(REG_PAYLOADLENGTH, plength);
+}
+
+uint8 RFM69_SetSync(uint8 syncsize, uint8 syncbitstolerance, uint8 *syncvalue)
+{
+    uint8 loop;
+    
+    if ((syncsize > 8) || (syncbitstolerance > 7)) return 0;
+    
+    RFM69_Register_Write(REG_SYNCCONFIG, 0b10000000 | ((syncsize - 1) << 3) | syncbitstolerance);
+    
+    for (loop = REG_SYNCVALUE_1; loop < (REG_SYNCVALUE_8 + 1); loop++)
+    {
+        RFM69_Register_Write(loop, *syncvalue);
+        syncvalue++;
+    }
+    
+    return 1;
+}
+
+uint8 RFM69_Encryption(uint8 setunset, uint8 *aeskey)
+{
+    uint8 loop;
+    
+    if (setunset > 1) return 0;
+    
+        /* Set standby mode. */
+	RFM69_SetMode(OP_MODE_STANDBY);
+            
+    if (setunset == 1)
+    {
+        for (loop = REG_AESKEY_1; loop < (REG_AESKEY_16 + 1); loop++)
+        {
+            RFM69_Register_Write(loop, *aeskey);
+            aeskey++;
+        }
+    }
+
+    RFM69_Register_Write(REG_PACKETCONFIG_2, (RFM69_Register_Read(REG_PACKETCONFIG_2) & 0xFE) | setunset);
+    
+    return 1;
 }
 
 void RFM69_SetMode(uint8 mode) 
@@ -131,11 +219,11 @@ void RFM69_DataPacket_TX(uint8 *buf, int len)
     SPI_ss0_m_Write(1);
 
 	/* Set TX mode. */
-    RFM69_Register_Write(REG_PACKETCONFIG2, (RFM69_Register_Read(REG_PACKETCONFIG2) & 0xFB) | 0x04);
+    RFM69_Register_Write(REG_PACKETCONFIG_2, (RFM69_Register_Read(REG_PACKETCONFIG_2) & 0xFB) | 0x04);
 	RFM69_SetMode(OP_MODE_TX);
     
     /* Wait until data has been sent. */
-    while ((RFM69_Register_Read(REG_IRQFLAGS2) & 0x08) == 0) {};
+    while ((RFM69_Register_Read(REG_IRQFLAGS_2) & 0x08) == 0) {};
 }
 
 
@@ -144,7 +232,7 @@ int RFM69_DataPacket_RX(uint8 *buffer, uint8 *rssi)
 	uint8 loop, fifolength;
     
     /* Check if there is data ready in FIFO. */
-    if (!(RFM69_Register_Read(REG_IRQFLAGS2) & 0x04)) return 0; // No data. Return 0.
+    if (!(RFM69_Register_Read(REG_IRQFLAGS_2) & 0x04)) return 0; // No data. Return 0.
     
     /* Set standby mode. */
     RFM69_SetMode(OP_MODE_STANDBY);
@@ -174,7 +262,7 @@ int RFM69_DataPacket_RX(uint8 *buffer, uint8 *rssi)
     SPI_ss0_m_Write(1);
     
     /* Set RX mode. */
-    RFM69_Register_Write(REG_PACKETCONFIG2, (RFM69_Register_Read(REG_PACKETCONFIG2) & 0xFB) | 0x04);
+    RFM69_Register_Write(REG_PACKETCONFIG_2, (RFM69_Register_Read(REG_PACKETCONFIG_2) & 0xFB) | 0x04);
     RFM69_SetMode(OP_MODE_RX);
         
     /* If pointer to rssi != 0, then read RSSI. */
@@ -205,10 +293,10 @@ uint8 RFM69_GetTemperature()
 	RFM69_SetMode(OP_MODE_STANDBY);
     
     /* Start temperature measurement and wait until finish. */
-	RFM69_Register_Write(REG_TEMP1, 0x08);
-    while((RFM69_Register_Read(REG_TEMP1) & 0x04) != 0) {};
+	RFM69_Register_Write(REG_TEMP_1, 0x08);
+    while((RFM69_Register_Read(REG_TEMP_1) & 0x04) != 0) {};
 
-	temperature = RFM69_Register_Read(REG_TEMP2);
+	temperature = RFM69_Register_Read(REG_TEMP_2);
 
 	/* Restore previous mode. */
     RFM69_SetMode(actualmode);
@@ -255,21 +343,28 @@ void RFM69_Register_Write(uint8 reg_addr, uint8 reg_value)
     SPI_ss0_m_Write(1);
 }
 
+
+
 void RFM69_SetBitrate(uint16 bitrate)
 {
 	uint16 regsvalue;
-	uint8 actualmode = RFM69_Register_Read(REG_OPMODE);
-	
-	RFM69_SetMode(OP_MODE_STANDBY);
 
 	/* Calculate registers value. 
 		registers value = RFM69_InternalClock / bitrate.
 		Internal clock of RFM69 is 32Mhz.
 	*/
 	regsvalue = 32000000 / bitrate;
+    RFM69_SetBitrateCls(regsvalue >> 8, regsvalue);
+}
 
- 	RFM69_Register_Write(REG_BITRATEMSB, regsvalue >> 8);
-	RFM69_Register_Write(REG_BITRATELSB, regsvalue);
+void RFM69_SetBitrateCls(uint8 msb, uint8 lsb)
+{
+    uint8 actualmode = RFM69_Register_Read(REG_OPMODE);
+	
+	RFM69_SetMode(OP_MODE_STANDBY);
+
+ 	RFM69_Register_Write(REG_BITRATEMSB, msb);
+	RFM69_Register_Write(REG_BITRATELSB, lsb);
 	
 	/* Restore previous mode. */
 	RFM69_SetMode(actualmode);

@@ -253,49 +253,6 @@
 <VisibleNodeIds>
 <v>PSoC4_RFM69</v>
 <v>PSoC4_RFM69\PSoC4_RFM69</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\Cm0Start.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\CyBootAsmGnu.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\cyfitter_cfg.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\CyFlash.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\CyLFClk.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\CyLib.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\cymetadata.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\cyPm.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\cyutils.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\Led_Blue.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\Led_Green.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\Led_Red.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\main.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\PSoC_RFM69.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\SPI.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\SPI_BOOT.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\SPI_miso_m.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\SPI_mosi_m.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\SPI_PM.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\SPI_SCBCLK.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\SPI_sclk_m.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\SPI_SPI.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\SPI_SPI_BOOT.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\SPI_SPI_UART.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\SPI_ss0_m.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\UART.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_BOOT.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_PM.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_rx.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_SCBCLK.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_SPI_UART.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_SPI_UART_INT.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_tx.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_UART.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_UART_BOOT.lst</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\PSoC4_RFM69.elf</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\PSoC4_RFM69.hex</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\CortexM0\ARM_GCC_493\Debug\PSoC4_RFM69.map</v>
-<v>PSoC4_RFM69\PSoC4_RFM69\PSoC4_RFM69.gpdsc</v>
 </VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 </TreeStates>
@@ -310,6 +267,12 @@
 <v>PSoC4_RFM69\PSoC4_RFM69\PSoC 4 Architecture TRM</v>
 <v>PSoC4_RFM69\PSoC4_RFM69\PSoC 4200 Family Datasheet</v>
 <v>PSoC4_RFM69\PSoC4_RFM69\System Reference Guides</v>
+<v>PSoC4_RFM69\PSoC4_RFM69\System Reference Guides\cy_boot_v5_20</v>
+<v>PSoC4_RFM69\PSoC4_RFM69\System Reference Guides\cy_lfclk_v1_0</v>
+<v>PSoC4_RFM69\PSoC4_RFM69\cy_pins_v2_10</v>
+<v>PSoC4_RFM69\PSoC4_RFM69\cy_pins_v2_10\cy_pins_v2_10.pdf</v>
+<v>PSoC4_RFM69\PSoC4_RFM69\SCB_P4_v3_0</v>
+<v>PSoC4_RFM69\PSoC4_RFM69\SCB_P4_v3_0\SCB_P4_v3_0.pdf</v>
 </ExpandedNodeIds>
 <VisibleNodeIds>
 <v>PSoC4_RFM69</v>
@@ -317,6 +280,12 @@
 <v>PSoC4_RFM69\PSoC4_RFM69\PSoC 4 Architecture TRM</v>
 <v>PSoC4_RFM69\PSoC4_RFM69\PSoC 4200 Family Datasheet</v>
 <v>PSoC4_RFM69\PSoC4_RFM69\System Reference Guides</v>
+<v>PSoC4_RFM69\PSoC4_RFM69\System Reference Guides\cy_boot_v5_20</v>
+<v>PSoC4_RFM69\PSoC4_RFM69\System Reference Guides\cy_lfclk_v1_0</v>
+<v>PSoC4_RFM69\PSoC4_RFM69\cy_pins_v2_10</v>
+<v>PSoC4_RFM69\PSoC4_RFM69\cy_pins_v2_10\cy_pins_v2_10.pdf</v>
+<v>PSoC4_RFM69\PSoC4_RFM69\SCB_P4_v3_0</v>
+<v>PSoC4_RFM69\PSoC4_RFM69\SCB_P4_v3_0\SCB_P4_v3_0.pdf</v>
 </VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 </TreeStatesV2>
