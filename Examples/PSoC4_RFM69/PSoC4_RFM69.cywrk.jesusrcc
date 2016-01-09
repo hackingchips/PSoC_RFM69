@@ -13,7 +13,7 @@
 <v>Output</v>
 </TreeKeys>
 <TreeStates>
-<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="PSoC4_RFM69\PSoC4_RFM69\PSoC_RFM69_Library">
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="PSoC4_RFM69\PSoC4_RFM69\PSoC_RFM69_Library\PSoC_RFM69.c">
 <ExpandedNodeIds>
 <v>PSoC4_RFM69</v>
 <v>PSoC4_RFM69\PSoC4_RFM69</v>
@@ -295,11 +295,10 @@
 </CyGuid_fdba8dfd-b15b-4469-9bbb-9e40c3e70997>
 <Unloaded />
 <OpenDocs>
-<name v=".\PSoC4_RFM69.cydsn\TopDesign\TopDesign.cysch" />
 <name v=".\PSoC4_RFM69.cydsn\main.c" />
+<name v="..\..\PSoC_RFM69_Library\PSoC_RFM69_Config.h" />
 <name v="..\..\PSoC_RFM69_Library\PSoC_RFM69.h" />
 <name v="..\..\PSoC_RFM69_Library\PSoC_RFM69.c" />
-<name v=".\PSoC4_RFM69.cydsn\PSoC4_RFM69.cydwr" />
 </OpenDocs>
 <config v="" />
 <AutoUpdate v="true" />

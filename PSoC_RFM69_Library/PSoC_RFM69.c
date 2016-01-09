@@ -1,14 +1,27 @@
 /*******************************************************************************
-* File Name: RFM69.c
-* 
+* File Name: PSoC_RFM69.c
+*
+* Version: ??? (no version yet, it works but in development). 
 *
 * Description:
 *  PSoC library to control RFM69 radio modules.
 *
 * Note:
+*   - Support only for RFM69 module (not H, high power module).
+*   - Only FSK modulation.
+*   - Fixed length packet.
+*   - No interrupt support.
+*   - PSOC4 and PSCO4M supported.
+*
+*   TODO's:
+*       - add support for H module.
+*       - add support for variable length packet.
+*       - add support for interrupts.
+*       - add support for hardware reset.
+*       - add support for PSOC5LP.
 *
 ********************************************************************************
-* Copyright (c) 2015 Jesús Rodríguez Cacabelos
+* Copyright (c) 2015 - 2016 Jesús Rodríguez Cacabelos
 * This library is dual licensed under the MIT and GPL licenses.
 * http:
 *******************************************************************************/
@@ -18,12 +31,35 @@
 #include "PSoC_RFM69.h"
 #include "PSoC_RFM69_Config.h"
 
+/* Macro name : mRFM69_WaitModeReady.
+   Description: Wait until RFM69 module operation mode have changed.
+*/   
 #define mRFM69_WaitModeReady()  while((RFM69_Register_Read(REG_IRQFLAGS_1) & 0x80) == 0) {}
 
+/*******************************************************************************
+*   Function prototypes.
+*******************************************************************************/
 uint8 RFM69_GetRSSI();
 uint8 RFM69_Register_Read(uint8 reg_addr);
 void RFM69_Register_Write(uint8 reg_addr, uint8 reg_value);
 
+/*******************************************************************************
+* Function Name: RFM69_Start
+********************************************************************************
+*
+* Summary:
+*  Initializacion of the RFM69 module internal registers. Some registers have
+*  fixed values. Other registers depend on values fixed in configuration
+*  header file.
+*
+* Parameters:
+*  none
+*
+* Return:
+*  1 - If initialization sucessful.
+*  0 - If can not connect to the RFM69 module.
+*
+*******************************************************************************/
 uint8 RFM69_Start()
 {
     uint16 loop;
@@ -45,8 +81,10 @@ uint8 RFM69_Start()
         {REG_FRFLSB, FREQUENCY_LSB},
             /* PA = ON. */
         {REG_PALEVEL, 0b10000000 | POWER_LEVEL},
-        {REG_OCP, 0b00001111},				// OCP Enabled
-        {REG_LNA, 0b10001000},				// Input impedance = 200ohm, gain = internal AGC.  
+            /* Over current protection enabled. */
+        {REG_OCP, 0b00001111},
+            /* Input impedance = 200ohm, gain = internal AGC. */
+        {REG_LNA, 0b10001000},
         {REG_RXBW, 0b01010010},
         {REG_DIOMAPPING_1, 0b01000100},		
             /* Preamble set to 5 bytes. */
@@ -96,10 +134,11 @@ uint8 RFM69_Start()
         {REG_AESKEY_16, AES_KEY_16}
     };
     
+    /* Try to connect to RFM69 module. */
     if (!RFM69_CheckPresence()) return 0;
    
     /* Configure the module. */
-	for (loop = 0; loop < (sizeof(RFM69_CONFIG) / 2); loop++)    //RFM69_CONFIG[loop][0] != 255; loop++) 
+	for (loop = 0; loop < (sizeof(RFM69_CONFIG) / 2); loop++)
     {
 	    RFM69_Register_Write(RFM69_CONFIG[loop][0], RFM69_CONFIG[loop][1]);
 	}
@@ -110,11 +149,32 @@ uint8 RFM69_Start()
     return 1;
 }
 
+/*******************************************************************************
+* Function Name: RFM69_CheckPresence
+********************************************************************************
+*
+* Summary:
+*  Look if RFM69 is connected to SPI bus.
+*
+* Parameters:
+*  none
+*
+* Return:
+*  1 - If RFM69 module was found in SPI bus..
+*  0 - If can not connect to the RFM69 module.
+*
+* Note:
+*  I took the idea of checking module pressence in the bus from the library of
+*  Joe Desbonnet
+*  https://github.com/jdesbonnet/RFM69_LPC812_firmware.git
+*
+*******************************************************************************/
 uint8 RFM69_CheckPresence() 
 {
     /*  Backup AES registry. */
     int aeskey1 = RFM69_Register_Read(0x3E);;
 
+    /* Write some values to some AES registries and try to reread them. */
 	RFM69_Register_Write(0x3E,0x55);
     if (RFM69_Register_Read(0x3E) != 0x55) return 0;
     
@@ -127,6 +187,240 @@ uint8 RFM69_CheckPresence()
 	return 1;
 }
 
+/*******************************************************************************
+* Function Name: RFM69_SetMode
+********************************************************************************
+*
+* Summary:
+*  Change operating mode of the RFM69 module.
+*
+* Parameters:
+*  mode:        new operating mode.
+*
+* Return:
+*  none
+*
+*******************************************************************************/
+void RFM69_SetMode(uint8 mode) 
+{
+	RFM69_Register_Write(REG_OPMODE, mode);
+    mRFM69_WaitModeReady();
+}
+
+/*******************************************************************************
+* Function Name: RFM69_SetPayloadLength
+********************************************************************************
+*
+* Summary:
+*  Change the length of payload.
+*
+* Parameters:
+*  plength:     new payload length.
+*
+* Return:
+*  none
+*
+*******************************************************************************/
+void RFM69_SetPayloadLength(uint8 plength)
+{
+    RFM69_Register_Write(REG_PAYLOADLENGTH, plength);
+}
+
+/*******************************************************************************
+* Function Name: RFM69_SetSync
+********************************************************************************
+*
+* Summary:
+*  Set how many bytes will be used as syncronization bytes and what is the 
+*  error tolerance in bits when checking syncronization.
+*
+* Parameters:
+*  syncsize:            number of syncronizatino bytes used (max 8 bytes).
+*  syncbitstolerance:   erro tolerance in bits (max 7 bits).
+*  syncvalue:           pointer to uint8 array with bytes values used as
+*                       syncronization bytes. Length of the array have to be
+*                       same as 'synsize' value.
+*
+* Return:
+*  1 - If succesful.
+*  2 - If 'synsize' > 8 or 'synbitstolerance' > 7
+*
+*******************************************************************************/
+uint8 RFM69_SetSync(uint8 syncsize, uint8 syncbitstolerance, uint8 *syncvalue)
+{
+    uint8 loop;
+    
+    if ((syncsize > 8) || (syncbitstolerance > 7)) return 0;
+    
+    RFM69_Register_Write(REG_SYNCCONFIG, 0b10000000 | ((syncsize - 1) << 3) | syncbitstolerance);
+    
+    for (loop = REG_SYNCVALUE_1; loop < (REG_SYNCVALUE_8 + 1); loop++)
+    {
+        RFM69_Register_Write(loop, *syncvalue);
+        syncvalue++;
+    }
+    
+    return 1;
+}
+
+/*******************************************************************************
+* Function Name: RFM69_SetFrequency
+********************************************************************************
+*
+* Summary:
+*  Set value of carrier frequency.
+*
+* Parameters:
+*  frequency:           value of carrier frequency in hz.
+*
+* Return:
+*  none
+*
+*******************************************************************************/
+void RFM69_SetFrequency(uint32 frequency)
+{
+	uint32 regsvalue;
+	uint8 actualmode = RFM69_Register_Read(REG_OPMODE);
+	
+    /* Set standby mode. */
+	RFM69_SetMode(OP_MODE_STANDBY);
+
+  	regsvalue = frequency / 61.03515625f;
+
+  	RFM69_Register_Write(REG_FRFMSB, regsvalue >> 16);
+  	RFM69_Register_Write(REG_FRFMID, regsvalue >> 8);
+  	RFM69_Register_Write(REG_FRFLSB, regsvalue);
+
+	/* Restore previous mode. */
+	RFM69_SetMode(actualmode);
+}
+
+/*******************************************************************************
+* Function Name: RFM69_SetFrequencyDeviation
+********************************************************************************
+*
+* Summary:
+*  Set deviation frequency value.
+*
+* Parameters:
+*  frequency:           value of frequency in hz.
+*
+* Return:
+*  none
+*
+*******************************************************************************/
+void RFM69_SetFrequencyDeviation(uint16 frequency)
+{
+	uint16 regsvalue;
+	uint8 actualmode = RFM69_Register_Read(REG_OPMODE);
+	
+    /* Set standby mode. */
+	RFM69_SetMode(OP_MODE_STANDBY);
+	
+  	regsvalue = frequency / 61.03515625f;	
+
+	RFM69_Register_Write(REG_FDEVMSB, regsvalue >> 8);
+  	RFM69_Register_Write(REG_FDEVLSB, regsvalue);
+
+	/* Restore previous mode. */
+	RFM69_SetMode(actualmode);
+}
+
+/*******************************************************************************
+* Function Name: RFM69_SetBitrate
+********************************************************************************
+*
+* Summary:
+*  Set communication bit rate.
+*
+* Parameters:
+*  bitrate:     bitrate in bits per second.
+*
+* Return:
+*  none
+*
+*******************************************************************************/
+void RFM69_SetBitrate(uint16 bitrate)
+{
+	uint16 regsvalue;
+
+	regsvalue = 32000000 / bitrate;
+    RFM69_SetBitrateCls(regsvalue >> 8, regsvalue);
+}
+
+/*******************************************************************************
+* Function Name: RFM69_SetBitrateCls
+********************************************************************************
+*
+* Summary:
+*  Set communication bit rate.
+*  This function takes a previously calculated 16 bits value to be written
+*  directly into RFM module registers.
+*  Usually used to set communication rate using calculated standard values in
+*  'PSoC_RFM69.h' file.
+*
+* Parameters:
+*  msb:     more significant byte.
+*  lsb:     less significant byte.
+*
+* Return:
+*  none
+*
+*******************************************************************************/
+void RFM69_SetBitrateCls(uint8 msb, uint8 lsb)
+{
+    uint8 actualmode = RFM69_Register_Read(REG_OPMODE);
+	
+    /* Set standby mode. */
+	RFM69_SetMode(OP_MODE_STANDBY);
+
+ 	RFM69_Register_Write(REG_BITRATEMSB, msb);
+	RFM69_Register_Write(REG_BITRATELSB, lsb);
+	
+	/* Restore previous mode. */
+	RFM69_SetMode(actualmode);
+}
+
+/*******************************************************************************
+* Function Name: RFM69_SetPower
+********************************************************************************
+*
+* Summary:
+*  Set transmission output power.
+*
+* Parameters:
+*  power:   power value (max 31)
+*
+* Return:
+*  none
+*
+*******************************************************************************/
+void RFM69_SetPower(uint8 power)
+{
+	if (power > 31) power = 31;
+	
+	RFM69_Register_Write(REG_PALEVEL, (RFM69_Register_Read(REG_PALEVEL) & 0xF0) | power); 
+}
+
+/*******************************************************************************
+* Function Name: RFM69_SetAddressFiltering
+********************************************************************************
+*
+* Summary:
+*  Enable/disable address filtering.
+*
+* Parameters:
+*  addressfiltering:    00 - disable address filtering.
+*                       01 - enable node address filtering.
+*                       10 - enable node & broadcast address filtering.
+*  nodeaddress:         new node address.
+*  broadcastaddress:    new broadcast address.
+*
+* Return:
+*  1 - If sucessful.
+*  0 - If 'addressfiltering' have an inproper value.
+*
+*******************************************************************************/
 uint8 RFM69_SetAddressFiltering(uint8 addressfiltering, uint8 nodeaddress, uint8 broadcastaddress)
 {
     uint8 registervalue;
@@ -147,38 +441,37 @@ uint8 RFM69_SetAddressFiltering(uint8 addressfiltering, uint8 nodeaddress, uint8
     return 1;
 }
 
-void RFM69_SetPayloadLength(uint8 plength)
-{
-    RFM69_Register_Write(REG_PAYLOADLENGTH, plength);
-}
-
-uint8 RFM69_SetSync(uint8 syncsize, uint8 syncbitstolerance, uint8 *syncvalue)
-{
-    uint8 loop;
-    
-    if ((syncsize > 8) || (syncbitstolerance > 7)) return 0;
-    
-    RFM69_Register_Write(REG_SYNCCONFIG, 0b10000000 | ((syncsize - 1) << 3) | syncbitstolerance);
-    
-    for (loop = REG_SYNCVALUE_1; loop < (REG_SYNCVALUE_8 + 1); loop++)
-    {
-        RFM69_Register_Write(loop, *syncvalue);
-        syncvalue++;
-    }
-    
-    return 1;
-}
-
-uint8 RFM69_Encryption(uint8 setunset, uint8 *aeskey)
+/*******************************************************************************
+* Function Name: RFM69_Encryption
+********************************************************************************
+*
+* Summary:
+*  Enable/disable AES encryption.
+*
+* Parameters:
+*  enable:      0 - disable encryption.
+*               1 - enable encryption.
+*  aeskey:      pointer to uint8 array, 16 bytes length; with new encryption
+*               key.
+*
+* Return:
+*  1 - If sucessful.
+*  0 - If 'enable' > 1.
+*
+*******************************************************************************/
+uint8 RFM69_Encryption(uint8 enable, uint8 *aeskey)
 {
     uint8 loop;
+    uint8 actualmode;
     
-    if (setunset > 1) return 0;
+    if (enable > 1) return 0;
     
-        /* Set standby mode. */
+    /* Set standby mode. */
 	RFM69_SetMode(OP_MODE_STANDBY);
+    
+    actualmode = RFM69_Register_Read(REG_OPMODE);
             
-    if (setunset == 1)
+    if (enable == 1)
     {
         for (loop = REG_AESKEY_1; loop < (REG_AESKEY_16 + 1); loop++)
         {
@@ -187,17 +480,29 @@ uint8 RFM69_Encryption(uint8 setunset, uint8 *aeskey)
         }
     }
 
-    RFM69_Register_Write(REG_PACKETCONFIG_2, (RFM69_Register_Read(REG_PACKETCONFIG_2) & 0xFE) | setunset);
+    RFM69_Register_Write(REG_PACKETCONFIG_2, (RFM69_Register_Read(REG_PACKETCONFIG_2) & 0xFE) | enable);
+    
+    /* Restore previous mode. */
+	RFM69_SetMode(actualmode);
     
     return 1;
 }
 
-void RFM69_SetMode(uint8 mode) 
-{
-	RFM69_Register_Write(REG_OPMODE, mode);
-    mRFM69_WaitModeReady();
-}
-
+/*******************************************************************************
+* Function Name: RFM69_DataPacket_TX
+********************************************************************************
+*
+* Summary:
+*  Transmit a packet of data.
+*
+* Parameters:
+*  buf:     pointer to byte array with data to be sent.
+*  len:     length of data to be sent.
+*
+* Return:
+*  none
+*
+*******************************************************************************/
 void RFM69_DataPacket_TX(uint8 *buf, int len) 
 {
     /* Set standby mode before writting to FIFO. */
@@ -226,7 +531,23 @@ void RFM69_DataPacket_TX(uint8 *buf, int len)
     while ((RFM69_Register_Read(REG_IRQFLAGS_2) & 0x08) == 0) {};
 }
 
-
+/*******************************************************************************
+* Function Name: RFM69_DataPacket_RX
+********************************************************************************
+*
+* Summary:
+*  Try to read a received data packet.
+*
+* Parameters:
+*  buffer:      pointer to byte array where received data is returned.
+*  rssi:        pointer to 'uint8'.
+*               If 'rssi' != 0, at return it will have value of RSSI; 
+*               if = 0, RSSI is not readed.
+*
+* Return:
+*  Length of received data or 0 if there si no data ready.
+*
+*******************************************************************************/
 int RFM69_DataPacket_RX(uint8 *buffer, uint8 *rssi) 
 {
 	uint8 loop, fifolength;
@@ -271,17 +592,20 @@ int RFM69_DataPacket_RX(uint8 *buffer, uint8 *rssi)
     return fifolength;
 }
 
-uint8 RFM69_GetRSSI() 
-{
-    /* Start RSSI measurement. */
-	RFM69_Register_Write(REG_RSSICONFIG, 0x01); 
-    
-    /* Wait until measurement has finished. */
-    while ((RFM69_Register_Read(REG_RSSICONFIG) & 0x02) == 0) {};
-    
-    return RFM69_Register_Read(REG_RSSIVALUE);
-}
-
+/*******************************************************************************
+* Function Name: RFM69_GetTemperature
+********************************************************************************
+*
+* Summary:
+*  Read RFM module internal sensor temperature.
+*
+* Parameters:
+*  none
+*
+* Return:
+*  Temperature, register raw value.
+*
+*******************************************************************************/
 uint8 RFM69_GetTemperature() 
 {
     uint8 temperature;
@@ -304,6 +628,45 @@ uint8 RFM69_GetTemperature()
 	return temperature;
 }
 
+/*******************************************************************************
+* Function Name: RFM69_GetRSSI
+********************************************************************************
+*
+* Summary:
+*  Read RSSI value.
+*
+* Parameters:
+*  none
+*
+* Return:
+*  RSSI value, register raw value.
+*
+*******************************************************************************/
+uint8 RFM69_GetRSSI() 
+{
+    /* Start RSSI measurement. */
+	RFM69_Register_Write(REG_RSSICONFIG, 0x01); 
+    
+    /* Wait until measurement has finished. */
+    while ((RFM69_Register_Read(REG_RSSICONFIG) & 0x02) == 0) {};
+    
+    return RFM69_Register_Read(REG_RSSIVALUE);
+}
+
+/*******************************************************************************
+* Function Name: RFM69_Register_Read
+********************************************************************************
+*
+* Summary:
+*  Read value of a RFM module register.
+*
+* Parameters:
+*  reg_addr:        register address.
+*
+* Return:
+*  Register value.
+*
+*******************************************************************************/
 uint8 RFM69_Register_Read(uint8 reg_addr) 
 {
     uint8 reg_value;
@@ -329,6 +692,21 @@ uint8 RFM69_Register_Read(uint8 reg_addr)
 	return reg_value;
 }
 
+/*******************************************************************************
+* Function Name: RFM69_Register_Write
+********************************************************************************
+*
+* Summary:
+*  Write value to a RFM module register.
+*
+* Parameters:
+*  reg_addr:        register address.
+*  reg_value:       new register value.
+*
+* Return:
+*  none.
+*
+*******************************************************************************/
 void RFM69_Register_Write(uint8 reg_addr, uint8 reg_value) 
 {
     SPI_ss0_m_Write(0);
@@ -345,77 +723,10 @@ void RFM69_Register_Write(uint8 reg_addr, uint8 reg_value)
 
 
 
-void RFM69_SetBitrate(uint16 bitrate)
-{
-	uint16 regsvalue;
 
-	/* Calculate registers value. 
-		registers value = RFM69_InternalClock / bitrate.
-		Internal clock of RFM69 is 32Mhz.
-	*/
-	regsvalue = 32000000 / bitrate;
-    RFM69_SetBitrateCls(regsvalue >> 8, regsvalue);
-}
 
-void RFM69_SetBitrateCls(uint8 msb, uint8 lsb)
-{
-    uint8 actualmode = RFM69_Register_Read(REG_OPMODE);
-	
-	RFM69_SetMode(OP_MODE_STANDBY);
 
- 	RFM69_Register_Write(REG_BITRATEMSB, msb);
-	RFM69_Register_Write(REG_BITRATELSB, lsb);
-	
-	/* Restore previous mode. */
-	RFM69_SetMode(actualmode);
-}
 
-void RFM69_SetFrequency(uint32 frequency)
-{
-	uint32 regsvalue;
-	uint8 actualmode = RFM69_Register_Read(REG_OPMODE);
-	
-	RFM69_SetMode(OP_MODE_STANDBY);
 
-	/* Calculate registers value. 
-		frequency = frequency_step * registers values.
-		Frequency step = 61.03515625 Hz
-	*/
-  	regsvalue = frequency / 61.03515625f;
-
-  	RFM69_Register_Write(REG_FRFMSB, regsvalue >> 16);
-  	RFM69_Register_Write(REG_FRFMID, regsvalue >> 8);
-  	RFM69_Register_Write(REG_FRFLSB, regsvalue);
-
-	/* Restore previous mode. */
-	RFM69_SetMode(actualmode);
-}
-
-void RFM69_SetFrequencyDeviation(uint16 frequency)
-{
-	uint16 regsvalue;
-	uint8 actualmode = RFM69_Register_Read(REG_OPMODE);
-	
-	RFM69_SetMode(OP_MODE_STANDBY);
-	
-	/* Calculate registers value. 
-		frequency_dev = frequency_step * registers values.
-		Frequency step = 61.03515625 Hz
-	*/
-  	regsvalue = frequency / 61.03515625f;	
-
-	RFM69_Register_Write(REG_FDEVMSB, regsvalue >> 8);
-  	RFM69_Register_Write(REG_FDEVLSB, regsvalue);
-
-	/* Restore previous mode. */
-	RFM69_SetMode(actualmode);
-}
-
-void RFM69_SetPower(uint8 power)
-{
-	if (power > 31) power = 31;
-	
-	RFM69_Register_Write(REG_PALEVEL, (RFM69_Register_Read(REG_PALEVEL) & 0xF0) | power); 
-}
 
 

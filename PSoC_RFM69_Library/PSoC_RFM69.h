@@ -1,14 +1,27 @@
 /*******************************************************************************
-* File Name: RFM69.h
-* 
+* File Name: PSoC_RFM69.h
+*
+* Version: ??? (no version yet, it works but in development).
 *
 * Description:
-*  PSoC library to control RFM69 radio modules.
+*  PSoC library to control RFM69 radio modules. Header file.
 *
 * Note:
+*   - Support only for RFM69 module (not H, high power module).
+*   - Only FSK modulation.
+*   - Fixed length packet.
+*   - No interrupt support.
+*   - PSOC4 and PSCO4M supported.
+*
+*   TODO's:
+*       - add support for H module.
+*       - add support for variable length packet.
+*       - add support for interrupts.
+*       - add support for hardware reset.
+*       - add support for PSOC5LP.
 *
 ********************************************************************************
-* Copyright (c) 2015 Jesús Rodríguez Cacabelos
+* Copyright (c) 2015 - 2016 Jesús Rodríguez Cacabelos
 * This library is dual licensed under the MIT and GPL licenses.
 * http:
 *******************************************************************************/
@@ -18,6 +31,10 @@
     
 #include <cytypes.h>    
 
+/*******************************************************************************
+*   RFM69 Module internal registers.
+*******************************************************************************/
+    
 #define REG_FIFO            0x00
 #define REG_OPMODE          0x01                       
 #define REG_DATAMODUL       0x02
@@ -89,11 +106,19 @@
 #define REG_TESTDAGC        0x6F  
 #define REG_TESTAFC			0x71
     
+/*******************************************************************************
+*   RFM69 module operation modes.
+*******************************************************************************/    
+    
 #define OP_MODE_SLEEP       (0x00 << 2)
 #define OP_MODE_STANDBY     (0x01 << 2)
 #define OP_MODE_FS          (0x02 << 2)
 #define OP_MODE_TX          (0x03 << 2)
 #define OP_MODE_RX          (0x04 << 2)
+    
+/*******************************************************************************
+*   RFM69 module standard bit rates.
+*******************************************************************************/    
     
 #define BITRATE_MSB_1200            0x68
 #define BITRATE_LSB_1200            0x2B
@@ -112,20 +137,24 @@
 #define BITRATE_MSB_115200          0x01
 #define BITRATE_LSB_115200          0x16    
     
+/*******************************************************************************
+*   Function prototypes.
+*******************************************************************************/    
+        
 uint8 RFM69_Start();
-uint8 RFM69_CheckPresence();   
-uint8 RFM69_Encryption(uint8 setunset, uint8 *aeskey);
+uint8 RFM69_CheckPresence();  
 void RFM69_SetMode(uint8 mode);
-uint8 RFM69_SetAddressFiltering(uint8 filtering, uint8 nodeaddress, uint8 broadcastaddress);
 void RFM69_SetPayloadLength(uint8 plength);
 uint8 RFM69_SetSync(uint8 syncsize, uint8 syncbitstolerance, uint8 *syncvalue);
+void RFM69_SetFrequency(uint32 frequency);
+void RFM69_SetFrequencyDeviation(uint16 frequency);
+void RFM69_SetBitrate(uint16 bitrate);
+void RFM69_SetBitrateCls(uint8 msb, uint8 lsb);
+void RFM69_SetPower(uint8 power);
+uint8 RFM69_SetAddressFiltering(uint8 filtering, uint8 nodeaddress, uint8 broadcastaddress);
+uint8 RFM69_Encryption(uint8 setunset, uint8 *aeskey);
 void RFM69_DataPacket_TX(uint8 *buf, int len);  
 int RFM69_DataPacket_RX(uint8 *buffer, uint8 *rssi);
 uint8 RFM69_GetTemperature();
-void RFM69_SetBitrate(uint16 bitrate);
-void RFM69_SetBitrateCls(uint8 msb, uint8 lsb);
-void RFM69_SetFrequency(uint32 frequency);
-void RFM69_SetFrequencyDeviation(uint16 frequency);
-void RFM69_SetPower(uint8 power);
 
 #endif  /* PSOC_RFM69_H */    

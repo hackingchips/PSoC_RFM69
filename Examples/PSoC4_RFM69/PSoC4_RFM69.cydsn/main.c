@@ -10,7 +10,7 @@
 * Note:
 *
 ********************************************************************************
-* Copyright (c) 2015 Jesús Rodríguez Cacabelos
+* Copyright (c) 2015 - 2016 Jesús Rodríguez Cacabelos
 * This library is dual licensed under the MIT and GPL licenses.
 * http:
 *******************************************************************************/
