@@ -10,14 +10,11 @@
 *   - Support only for RFM69 module (not H, high power module).
 *   - Only FSK modulation.
 *   - Fixed length packet.
-*   - No interrupt support.
 *   - PSOC4 and PSCO4M supported.
 *
 *   TODO's:
 *       - add support for H module.
 *       - add support for variable length packet.
-*       - add support for interrupts.
-*       - add support for hardware reset.
 *       - add support for PSOC5LP.
 *
 ********************************************************************************
@@ -30,6 +27,12 @@
 
 #include "PSoC_RFM69.h"
 #include "PSoC_RFM69_Config.h"
+
+/* Macro name : mSPI_WAIT_TXDONE.
+   Description: Wait until SPI Tx have finished.
+*/  
+#define mSPI_WAIT_TXDONE()      while(0u == (SPI_GetMasterInterruptSource() & SPI_INTR_MASTER_SPI_DONE)) {} \
+                                SPI_ClearMasterInterruptSource(SPI_INTR_MASTER_SPI_DONE);
 
 /* Macro name : mRFM69_WaitModeReady.
    Description: Wait until RFM69 module operation mode have changed.
@@ -134,6 +137,11 @@ uint8 RFM69_Start()
         {REG_AESKEY_16, AES_KEY_16}
     };
     
+    /* If using hardware reset, do a reset. */
+#ifdef mmRESET_PIN
+    RFM69_HardwareReset();
+#endif    
+    
     /* Try to connect to RFM69 module. */
     if (!RFM69_CheckPresence()) return 0;
    
@@ -203,6 +211,14 @@ uint8 RFM69_CheckPresence()
 *******************************************************************************/
 void RFM69_SetMode(uint8 mode) 
 {
+    /* If operation mode = RX, then set DIO0 for interrupt when PayloadReady.
+       If operation mode = TX, then set DIO0 for interrupt when PacketSent. 
+    */
+    if (mode == OP_MODE_RX)
+        RFM69_Register_Write(REG_DIOMAPPING_1, 0x40);
+    else if (mode == OP_MODE_TX)
+        RFM69_Register_Write(REG_DIOMAPPING_1, 0x00);
+    
 	RFM69_Register_Write(REG_OPMODE, mode);
     mRFM69_WaitModeReady();
 }
@@ -466,11 +482,11 @@ uint8 RFM69_Encryption(uint8 enable, uint8 *aeskey)
     
     if (enable > 1) return 0;
     
+    actualmode = RFM69_Register_Read(REG_OPMODE);
+    
     /* Set standby mode. */
 	RFM69_SetMode(OP_MODE_STANDBY);
-    
-    actualmode = RFM69_Register_Read(REG_OPMODE);
-            
+ 
     if (enable == 1)
     {
         for (loop = REG_AESKEY_1; loop < (REG_AESKEY_16 + 1); loop++)
@@ -509,19 +525,19 @@ void RFM69_DataPacket_TX(uint8 *buf, int len)
 	RFM69_SetMode(OP_MODE_STANDBY);             
 
     /* Send data to RFM69 FIFO. */
-    SPI_ss0_m_Write(0);
+    mmSPI_SS_Write(0);
     CyDelayUs(SS_DELAY);
 
-    SPI_SpiUartClearTxBuffer();
-    SPI_SpiUartWriteTxData(REG_FIFO | 0x80);
+    mmSPI_SpiUartClearTxBuffer();
+    mmSPI_SpiUartWriteTxData(REG_FIFO | 0x80);
     mSPI_WAIT_TXDONE();
     
-    SPI_SpiUartClearTxBuffer();
-    SPI_SpiUartPutArray(buf, len);
+    mmSPI_SpiUartClearTxBuffer();
+    mmSPI_SpiUartPutArray(buf, len);
     mSPI_WAIT_TXDONE();
 
     CyDelayUs(SS_DELAY);
-    SPI_ss0_m_Write(1);
+    mmSPI_SS_Write(1);
 
 	/* Set TX mode. */
     RFM69_Register_Write(REG_PACKETCONFIG_2, (RFM69_Register_Read(REG_PACKETCONFIG_2) & 0xFB) | 0x04);
@@ -562,14 +578,14 @@ int RFM69_DataPacket_RX(uint8 *buffer, uint8 *rssi)
     fifolength = RFM69_Register_Read(REG_PAYLOADLENGTH);
 
     /* Read data from FIFO. */
-    SPI_ss0_m_Write(0);
+    mmSPI_SS_Write(0);
     CyDelayUs(SS_DELAY);
     
-    SPI_SpiUartClearTxBuffer();
-    SPI_SpiUartWriteTxData(REG_FIFO);
+    mmSPI_SpiUartClearTxBuffer();
+    mmSPI_SpiUartWriteTxData(REG_FIFO);
     mSPI_WAIT_TXDONE();
     
-    SPI_SpiUartClearRxBuffer();
+    mmSPI_SpiUartClearRxBuffer();
     
     for (loop = 0; loop < fifolength; loop++)
     {
@@ -580,7 +596,7 @@ int RFM69_DataPacket_RX(uint8 *buffer, uint8 *rssi)
     }
 
     CyDelayUs(SS_DELAY);
-    SPI_ss0_m_Write(1);
+    mmSPI_SS_Write(1);
     
     /* Set RX mode. */
     RFM69_Register_Write(REG_PACKETCONFIG_2, (RFM69_Register_Read(REG_PACKETCONFIG_2) & 0xFB) | 0x04);
@@ -671,23 +687,23 @@ uint8 RFM69_Register_Read(uint8 reg_addr)
 {
     uint8 reg_value;
     
-    SPI_ss0_m_Write(0);
+    mmSPI_SS_Write(0);
     CyDelayUs(SS_DELAY);
     
-    SPI_SpiUartClearTxBuffer();
-    SPI_SpiUartClearRxBuffer();
-    SPI_SpiUartWriteTxData(reg_addr);
+    mmSPI_SpiUartClearTxBuffer();
+    mmSPI_SpiUartClearRxBuffer();
+    mmSPI_SpiUartWriteTxData(reg_addr);
     mSPI_WAIT_TXDONE();
     
-    SPI_SpiUartClearTxBuffer();
-    SPI_SpiUartClearRxBuffer();
-    SPI_SpiUartWriteTxData(0xFF);
+    mmSPI_SpiUartClearTxBuffer();
+    mmSPI_SpiUartClearRxBuffer();
+    mmSPI_SpiUartWriteTxData(0xFF);
     mSPI_WAIT_TXDONE();    
     
-	reg_value = SPI_SpiUartReadRxData();
+	reg_value = mmSPI_SpiUartReadRxData();
 
     CyDelayUs(SS_DELAY);
-    SPI_ss0_m_Write(1);
+    mmSPI_SS_Write(1);
     
 	return reg_value;
 }
@@ -709,21 +725,44 @@ uint8 RFM69_Register_Read(uint8 reg_addr)
 *******************************************************************************/
 void RFM69_Register_Write(uint8 reg_addr, uint8 reg_value) 
 {
-    SPI_ss0_m_Write(0);
+    mmSPI_SS_Write(0);
     CyDelayUs(SS_DELAY);
     
-    SPI_SpiUartClearTxBuffer();
-    SPI_SpiUartWriteTxData(reg_addr | 0x80); 
-    SPI_SpiUartWriteTxData(reg_value);
+    mmSPI_SpiUartClearTxBuffer();
+    mmSPI_SpiUartWriteTxData(reg_addr | 0x80); 
+    mmSPI_SpiUartWriteTxData(reg_value);
     mSPI_WAIT_TXDONE();
 
     CyDelayUs(SS_DELAY);
-    SPI_ss0_m_Write(1);
+    mmSPI_SS_Write(1);
 }
 
+/*******************************************************************************
+* Function Name: RFM69_HardwareReset
+********************************************************************************
+*
+* Summary:
+*  Perform a hardware reset to RFM69 module
+*
+* Parameters:
+*  none.
+*
+* Return:
+*  none.
+*
+*******************************************************************************/
 
+#ifdef mmRESET_PIN
 
+void RFM69_HardwareReset()
+{
+    mmRESET_PIN(1);     // Reset pin to high level.
+    CyDelay(1) ;        // Wait 1ms (datasheet says 100us)
+    mmRESET_PIN(0);     // Reset pin to low state.
+    CyDelay(10);        // Wait 10ms (datasheet says 5ms)
+}
 
+#endif
 
 
 

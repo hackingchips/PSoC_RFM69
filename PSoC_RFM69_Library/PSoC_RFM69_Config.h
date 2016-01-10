@@ -13,14 +13,11 @@
 *   - Support only for RFM69 module (not H, high power module).
 *   - Only FSK modulation.
 *   - Fixed length packet.
-*   - No interrupt support.
 *   - PSOC4 and PSCO4M supported.
 *
 *   TODO's:
 *       - add support for H module.
 *       - add support for variable length packet.
-*       - add support for interrupts.
-*       - add support for hardware reset.
 *       - add support for PSOC5LP.
 *
 ********************************************************************************
@@ -36,13 +33,55 @@
 
 /*******************************************************************************
 *   SPI bus configuration.
+*
+*   As this library is released as a regular library and not as a PSoC Creator
+*   module, function names related to SPI bus should be adjusted every time
+*   the user changes the name to the SPI module.
+*   To avoid this, SPI bus module name can be configured here and also name
+*   of API function used to write level of the SS line.
 *******************************************************************************/
-// Define SS bus pin delay in uS. ** will be documented. **
-#define SS_DELAY        100
 
-#define mSPI_WAIT_TXDONE()      while(0u == (SPI_GetMasterInterruptSource() & SPI_INTR_MASTER_SPI_DONE)) {} \
-                                SPI_ClearMasterInterruptSource(SPI_INTR_MASTER_SPI_DONE);
+/* *** SS delay. *** 
+    
+    In microseconds.
+    Time since SS line goes low until SPI begins sending data, OR time since last
+    data was sent to spi bus until SS line goes high.
+    If you face problems with SPI comunications, try to adjust this value. It looks
+    that CyDelay functions are not very accurate and they varies depending on 
+    microcontroller working frequency.
+*/  
+    
+#define SS_DELAY                100
 
+/* *** SPI_NAME *** 
+    
+    Put here the name you have given to the SPI bus module in PSoC Creator schematic.
+*/  
+
+#define SPI_NAME                SPI  
+
+/* *** mmSPI_SS_Write *** 
+    
+    Put here the name of the API function used to write SS line state.
+    Example: 
+        - if using Cypress API macros: SPI_ss0_m_Write
+        - if using another gpio pint: SPI_SS_Write.    
+*/    
+#define mmSPI_SS_Write(value)   SPI_ss0_m_Write(value)    
+
+/*******************************************************************************
+*   Hardware reset.
+*******************************************************************************/
+    
+/* *** RESET_PIN *** 
+    
+    Put here the name of the API function used to write RESET PIN state.
+    This works the same way as previously mentioned for SPI bus.
+    
+    Comment this line if you don´t want to use hardware reset.
+*/    
+//#define mmRESET_PIN(value)      RFM_RESET_Write(value)
+    
 /*******************************************************************************
 *   RFM69 configuration.
 *******************************************************************************/    
@@ -145,7 +184,7 @@
 */     
     
 #define ADDRESS_FILTERING       0x00
-#define NODE_ADDRESS            0x00
+#define NODE_ADDRESS            100
 #define BROADCAST_ADDRESS       0x00
    
 /* *** AES Encryption. ***

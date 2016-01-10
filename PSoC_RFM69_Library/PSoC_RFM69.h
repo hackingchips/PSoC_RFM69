@@ -10,14 +10,11 @@
 *   - Support only for RFM69 module (not H, high power module).
 *   - Only FSK modulation.
 *   - Fixed length packet.
-*   - No interrupt support.
 *   - PSOC4 and PSCO4M supported.
 *
 *   TODO's:
 *       - add support for H module.
 *       - add support for variable length packet.
-*       - add support for interrupts.
-*       - add support for hardware reset.
 *       - add support for PSOC5LP.
 *
 ********************************************************************************
@@ -30,7 +27,31 @@
 #define PSOC_RFM69_H
     
 #include <cytypes.h>    
+#include "PSoC_RFM69_Config.h"    
+    
+/*******************************************************************************
+*   SPI bus.
+*       These macros makes text substitution in function names related to SPI
+*       bus. 
+*       This is to avoid the user have to change the name of fuctions related
+*       to SPI bus depending on the name he has given to SPI bus module in 
+*       PSoC Creator schematic.  
+*       Only some parameters have to be configured in configuration header
+*       file.    
+*******************************************************************************/    
 
+#define CONCATENATE(name, function)                 CONCAT(name, function)
+#define CONCAT(name, function)                      name##function
+    
+#define mmSPI_SpiUartClearTxBuffer                  CONCATENATE(SPI_NAME, _SpiUartClearTxBuffer)
+#define mmSPI_SpiUartClearRxBuffer                  CONCATENATE(SPI_NAME, _SpiUartClearRxBuffer)    
+#define mmSPI_SpiUartPutArray(a, b)                 CONCATENATE(SPI_NAME, _SpiUartPutArray(a, b)) 
+#define mmSPI_SpiUartWriteTxData(value)             CONCATENATE(SPI_NAME, _SpiUartWriteTxData(value))
+#define mmSPI_SpiUartReadRxData                     CONCATENATE(SPI_NAME, _SpiUartReadRxData)
+#define mmSPI_GetMasterInterruptSource              CONCATENATE(SPI_NAME, _GetMasterInterruptSource)
+#define mmSPI_ClearMasterInterruptSource(value)     CONCATENATE(SPI_NAME, _ClearMasterInterruptSource(value)) 
+#define mmSPI_INTR_MASTER_SPI_DONE                  CONCATENATE(SPI_NAME, _INTR_MASTER_SPI_DONE)    
+    
 /*******************************************************************************
 *   RFM69 Module internal registers.
 *******************************************************************************/
@@ -156,5 +177,9 @@ uint8 RFM69_Encryption(uint8 setunset, uint8 *aeskey);
 void RFM69_DataPacket_TX(uint8 *buf, int len);  
 int RFM69_DataPacket_RX(uint8 *buffer, uint8 *rssi);
 uint8 RFM69_GetTemperature();
+
+#ifdef mmRESET_PIN
+    void RFM69_HardwareReset();
+#endif 
 
 #endif  /* PSOC_RFM69_H */    
