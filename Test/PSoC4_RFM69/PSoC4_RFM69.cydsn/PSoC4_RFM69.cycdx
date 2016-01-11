@@ -2,9 +2,9 @@
 <blockRegMap version="1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://cypress.com/xsd/cyblockregmap cyblockregmap.xsd" xmlns="http://cypress.com/xsd/cyblockregmap">
   <block name="RFM_INT" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="RFM_RESET" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="RFM_isr" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="cy_lfclk" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="cy_boot" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="Led_Blue" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="SPI" BASE="0x0" SIZE="0x0" desc="Serial Communication Block" visible="true" hidden="false">
     <block name="clock_VM" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
     <block name="rx_wake_VM" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
@@ -705,6 +705,7 @@
       <field name="BREAK_DETECT" from="11" to="11" access="RW" resetVal="" desc="Logical and of corresponding request and mask bits" />
     </register>
   </block>
-  <block name="Led_Green" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="Led_Red" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="Led_Blue" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="Led_Green" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
 </blockRegMap>

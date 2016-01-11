@@ -10,7 +10,7 @@
 *   - Support only for RFM69 module (not H, high power module).
 *   - Only FSK modulation.
 *   - Fixed length packet.
-*   - PSOC4 and PSCO4M supported.
+*   - PSOC4 and PSOC4M supported.
 *
 *   TODO's:
 *       - add support for H module.
@@ -159,6 +159,13 @@
 #define BITRATE_LSB_115200          0x16    
     
 /*******************************************************************************
+*   RFM69 Interrupt Flags.
+*******************************************************************************/     
+    
+#define IRQ_RX                      0x01    
+#define IRQ_TX                      0x02    
+    
+/*******************************************************************************
 *   Function prototypes.
 *******************************************************************************/    
         
@@ -176,6 +183,7 @@ uint8 RFM69_SetAddressFiltering(uint8 filtering, uint8 nodeaddress, uint8 broadc
 uint8 RFM69_Encryption(uint8 setunset, uint8 *aeskey);
 void RFM69_DataPacket_TX(uint8 *buf, int len);  
 int RFM69_DataPacket_RX(uint8 *buffer, uint8 *rssi);
+uint8 RFM69_GetIRQFlags();
 uint8 RFM69_GetTemperature();
 
 #ifdef mmRESET_PIN

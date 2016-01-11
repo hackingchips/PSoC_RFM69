@@ -10,7 +10,7 @@
 *   - Support only for RFM69 module (not H, high power module).
 *   - Only FSK modulation.
 *   - Fixed length packet.
-*   - PSOC4 and PSCO4M supported.
+*   - PSOC4 and PSOC4M supported.
 *
 *   TODO's:
 *       - add support for H module.
@@ -606,6 +606,32 @@ int RFM69_DataPacket_RX(uint8 *buffer, uint8 *rssi)
     if (rssi != 0) *rssi = RFM69_GetRSSI();    
 
     return fifolength;
+}
+
+/*******************************************************************************
+* Function Name: RFM69_GetIRQFlags
+********************************************************************************
+*
+* Summary:
+*  Return IRQ flags.
+*
+* Parameters:
+*  none
+*
+* Return:
+*  byte with flags:
+*   bit 0 - PayloadReady.
+*   bit 1 - PacketSent.
+*
+*******************************************************************************/
+uint8 RFM69_GetIRQFlags()
+{
+    uint8 dd;
+    dd = RFM69_Register_Read(REG_IRQFLAGS_2);
+    dd = dd >> 2;
+    dd = dd & 0x03;
+    
+    return dd;
 }
 
 /*******************************************************************************

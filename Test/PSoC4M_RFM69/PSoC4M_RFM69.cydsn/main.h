@@ -24,16 +24,23 @@
     
 /* ************************************************************************* */
 /* *** If you want. Uncomment line. *** */
+/* *** Testing with interrupts, if selected; is done only while in reception 
+       mode.*/
     
 //#define TEST_WITH_ENCRYPTION
-//#define TEST_USING_INTERRUPTS    
+#define TEST_USING_INTERRUPTS    
     
 /* ************************************************************************* */    
+    
+    /* RFM interrupts flag. */
+extern volatile uint8 rfrxirqflag;
     
     /* Used for timing. */
 volatile int16 timercnt;            // used for timming.
     
     /* Data buffer for transmision/reception to/from RFM69 module. */
 extern uint8 rfdatabytes[];    
+
+
     
 #endif  /* MAIN_H */

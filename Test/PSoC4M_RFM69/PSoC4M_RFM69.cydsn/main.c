@@ -37,18 +37,32 @@ uint8 encryptionkey[] = { // 16 bytes.
     0x75, 0x91, 0x49, 0x21, 0xFE, 0xFF, 0xAA, 0x55 
 };    
 
+    /* Interrupts flag. */
+volatile uint8 rfrxirqflag = 0;
+
 /* ************************************************************************* */
 /* *** Function prototypes. *** */
 
 CY_ISR_PROTO(SysTick_Isr);              // interrupt prototype.
+CY_ISR_PROTO(RFM69_IsrHandler);
 
 /* ************************************************************************* */
 
-void SysTickIsrHandler(void)
+CY_ISR(SysTickIsrHandler)
 {
     // decrease timer counter if it is greater than 0.
     if (timercnt > 0) timercnt--;
 }
+
+CY_ISR(RFM69_IsrHandler)
+{
+    /* Clear pending Interrupt */
+    RFM_isr_ClearPending();
+    RFM_INT_ClearInterrupt();
+    
+    if (RFM69_GetIRQFlags() & IRQ_RX) rfrxirqflag = 1;
+}
+
 
 /* ************************************************************************* */
 
@@ -92,6 +106,13 @@ int main()
         UART_UartPutString("OK\n\n");
         Led_Green_Write(0);   
     }
+    
+    /* If testing with interrupts. But disabled until entering RX mode. */
+    #ifdef TEST_USING_INTERRUPTS
+        
+        RFM_isr_StartEx(RFM69_IsrHandler);
+        
+    #endif    
     
     /* Start SysTick.
        When compiled for "MASTER" this is used to control timeout while in reception state. */

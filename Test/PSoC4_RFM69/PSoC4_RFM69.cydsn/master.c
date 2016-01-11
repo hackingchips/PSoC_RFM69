@@ -33,9 +33,6 @@ void Config_ForMaster()
 
 void Loop_Master()
 {
-    static uint8 master_state = 0;      // = 0, waiting serial port action. 
-                                        // = 1, waiting response from slave.
-    
     if (master_state == 0) Loop_Master_WaitingSPort();
     else if (master_state == 1) Loop_Master_WaitingSlaveResponse();
 }
@@ -189,7 +186,7 @@ void Loop_Master_WaitingSPort()
                    At Master we donÂ´t use address filtering, so we can received data from
                    different slaves. */
                 UART_UartPutString("Waiting data from Slave 2...");
-                RFM69_SetMode(OP_MODE_RX);
+                RFM69_SetMode(OP_MODE_RX);           
                 timercnt = 1000;            // set timout = 1000ms = 1s.
                 master_state = 1;                        
             }; break;      
@@ -209,7 +206,7 @@ void Loop_Master_WaitingSPort()
             }; break;
 
         }
-        
+                
         if (master_state == 0) UART_UartPutString("Select test :> ");
     }
 }
@@ -218,42 +215,84 @@ void Loop_Master_WaitingSPort()
 
 void Loop_Master_WaitingSlaveResponse()
 {
+    uint8 frame_len = 0;
     char itoastr[5];
     uint8 rssi;
     
-    // Waiting a packet from a slave containing
-    // Slave address + RSSI at slave when master data received + temperature.
-    uint8 frame_len = RFM69_DataPacket_RX(rfdatabytes, &rssi);
-
-    if (frame_len != 0)
-    {
-        UART_UartPutString("OK...\n");
-
-        UART_UartPutString("Slave: ");
-        itoa(rfdatabytes[0], itoastr, 10);
-        UART_UartPutString(itoastr);
-        UART_UartPutString(" RSSI: ");
-        itoa(rfdatabytes[1], itoastr, 10);
-        UART_UartPutString(itoastr);
-        UART_UartPutString(" Temperature: ");
-        itoa(rfdatabytes[2], itoastr, 10);
-        UART_UartPutString(itoastr);
-        UART_UartPutString("\nSelect test :> ");
+    /* Testing with interrupts? */
+    #ifdef TEST_USING_INTERRUPTS
         
-        // change to TX state.
-        master_state = 0;
-    }
-    else
-    {
-        if (timercnt == 0) // timed out?
+        if (rfrxirqflag == 1)
         {
+            frame_len = RFM69_DataPacket_RX(rfdatabytes, &rssi);
+
+            UART_UartPutString("OK...(using ints)\n");
+
+            UART_UartPutString("Slave: ");
+            itoa(rfdatabytes[0], itoastr, 10);
+            UART_UartPutString(itoastr);
+            UART_UartPutString(" RSSI: ");
+            itoa(rfdatabytes[1], itoastr, 10);
+            UART_UartPutString(itoastr);
+            UART_UartPutString(" Temperature: ");
+            itoa(rfdatabytes[2], itoastr, 10);
+            UART_UartPutString(itoastr);
+            UART_UartPutString("\nSelect test :> ");
+            
             // change to TX state.
-            master_state = 0; 
-            UART_SpiUartClearRxBuffer();    // discard received data while in rx mode.
-            UART_UartPutString("TimedOut...\n");
-            UART_UartPutString("Select test :> ");
+            master_state = 0;
+            
+            rfrxirqflag = 0;
         }
-    }     
+        else
+        {
+            if (timercnt == 0) // timed out?
+            {
+                // change to TX state.
+                master_state = 0; 
+                UART_SpiUartClearRxBuffer();    // discard received data while in rx mode.
+                UART_UartPutString("TimedOut...\n");
+                UART_UartPutString("Select test :> ");
+            }
+        }
+        
+    #else
+    
+        // Waiting a packet from a slave containing
+        // Slave address + RSSI at slave when master data received + temperature.
+        frame_len = RFM69_DataPacket_RX(rfdatabytes, &rssi);
+
+        if (frame_len != 0)
+        {
+            UART_UartPutString("OK...(polling rfm module)\n");
+
+            UART_UartPutString("Slave: ");
+            itoa(rfdatabytes[0], itoastr, 10);
+            UART_UartPutString(itoastr);
+            UART_UartPutString(" RSSI: ");
+            itoa(rfdatabytes[1], itoastr, 10);
+            UART_UartPutString(itoastr);
+            UART_UartPutString(" Temperature: ");
+            itoa(rfdatabytes[2], itoastr, 10);
+            UART_UartPutString(itoastr);
+            UART_UartPutString("\nSelect test :> ");
+            
+            // change to TX state.
+            master_state = 0;
+        }
+        else
+        {
+            if (timercnt == 0) // timed out?
+            {
+                // change to TX state.
+                master_state = 0; 
+                UART_SpiUartClearRxBuffer();    // discard received data while in rx mode.
+                UART_UartPutString("TimedOut...\n");
+                UART_UartPutString("Select test :> ");
+            }
+        }     
+    
+    #endif
 }
 
 /* ************************************************************************* */

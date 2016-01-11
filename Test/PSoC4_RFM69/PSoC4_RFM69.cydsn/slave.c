@@ -27,7 +27,7 @@ void Config_ForSlave()
     #endif
     
     #ifdef COMPILE_FOR_SLAVE_2
-            RFM69_SetAddressFiltering(01, 100, 0);
+            RFM69_SetAddressFiltering(01, 200, 0);
     #endif
 
     /* ----------------------------------------- */
@@ -42,56 +42,123 @@ void Loop_Slave()
 {
 	uint8 loop;
     uint8 rssi;
-    uint8 frame_len = RFM69_DataPacket_RX(rfdatabytes, &rssi);
+    uint8 frame_len;
+    
+    /* Testing with RFM69 interrupts? */
+    
+    #ifdef TEST_USING_INTERRUPTS
         
-    if (frame_len != 0)
-    {
-		/* Print bytes 3 to frame_len to verify data integrity. */
-		for (loop = 3; loop < frame_len; loop++)
-		{
-			UART_UartPutChar(rfdatabytes[loop]);
-			UART_UartPutChar(',');
-			if ((loop % 16) == 0) UART_UartPutChar('\n');
-		}
-		UART_UartPutChar('\n');
-		
-        // Remember!!! When using address filtering, address is not stripped from received data.
-        // Address is stored in FIFO, and it is the first byte in the FIFO.
-        switch (rfdatabytes[1])
+        if (rfrxirqflag == 1)
         {
-            case 1: Led_Red_Write(~Led_Red_Read()); break;
-            case 2: Led_Green_Write(~Led_Green_Read()); break;
-            case 3: Led_Blue_Write(~Led_Blue_Read()); break;
+            frame_len = RFM69_DataPacket_RX(rfdatabytes, &rssi);
             
-            case 0xAB: // Master asking for data.
+            UART_UartPutString("Using RFM Ints...");
+ 
+    		/* Print bytes 3 to frame_len to verify data integrity. */
+    		for (loop = 3; loop < frame_len; loop++)
+    		{
+    			UART_UartPutChar(rfdatabytes[loop]);
+    			UART_UartPutChar(',');
+    			if ((loop % 16) == 0) UART_UartPutChar('\n');
+    		}
+    		UART_UartPutChar('\n');
+    		
+            // Remember!!! When using address filtering, address is not stripped from received data.
+            // Address is stored in FIFO, and it is the first byte in the FIFO.
+            switch (rfdatabytes[1])
             {
-                /* Set RFM69 module in standby mode to discard new data while
-                   processing. */
-                RFM69_SetMode(OP_MODE_STANDBY);
+                case 1: Led_Red_Write(~Led_Red_Read()); break;
+                case 2: Led_Green_Write(~Led_Green_Read()); break;
+                case 3: Led_Blue_Write(~Led_Blue_Read()); break;
                 
-                /* Will send 3 bytes. Own node address + RSSI + temperature */
-                
-                #ifdef COMPILE_FOR_SLAVE_1
-                    rfdatabytes[0] = 100;
-                #endif
-                
-                #ifdef COMPILE_FOR_SLAVE_2
-                    rfdatabytes[0] = 200;
-                #endif
-                
-                rfdatabytes[1] = rssi;
-                rfdatabytes[2] = RFM69_GetTemperature();
+                case 0xAB: // Master asking for data.
+                {
+                    /* Set RFM69 module in standby mode to discard new data while
+                       processing. */
+                    RFM69_SetMode(OP_MODE_STANDBY);
+                    
+                    /* Will send 3 bytes. Own node address + RSSI + temperature */
+                    
+                    #ifdef COMPILE_FOR_SLAVE_1
+                        rfdatabytes[0] = 100;
+                    #endif
+                    
+                    #ifdef COMPILE_FOR_SLAVE_2
+                        rfdatabytes[0] = 200;
+                    #endif
+                    
+                    rfdatabytes[1] = rssi;
+                    rfdatabytes[2] = RFM69_GetTemperature();
 
-                RFM69_DataPacket_TX(rfdatabytes, 64);
+                    RFM69_DataPacket_TX(rfdatabytes, 64);
 
-                /* Return to RX state. */
-                RFM69_SetMode(OP_MODE_RX);
+                    /* Return to RX state. */
+                    RFM69_SetMode(OP_MODE_RX);
 
-            }; break;
+                }; break;
+            }
+    		
+    		TerminalSend_Slave();
+            
+            rfrxirqflag = 0;
         }
-		
-		TerminalSend_Slave();
-    }   
+        
+    #else
+    
+        frame_len = RFM69_DataPacket_RX(rfdatabytes, &rssi);
+            
+        if (frame_len != 0)
+        {
+            UART_UartPutString("Polling...");
+            
+    		/* Print bytes 3 to frame_len to verify data integrity. */
+    		for (loop = 3; loop < frame_len; loop++)
+    		{
+    			UART_UartPutChar(rfdatabytes[loop]);
+    			UART_UartPutChar(',');
+    			if ((loop % 16) == 0) UART_UartPutChar('\n');
+    		}
+    		UART_UartPutChar('\n');
+    		
+            // Remember!!! When using address filtering, address is not stripped from received data.
+            // Address is stored in FIFO, and it is the first byte in the FIFO.
+            switch (rfdatabytes[1])
+            {
+                case 1: Led_Red_Write(~Led_Red_Read()); break;
+                case 2: Led_Green_Write(~Led_Green_Read()); break;
+                case 3: Led_Blue_Write(~Led_Blue_Read()); break;
+                
+                case 0xAB: // Master asking for data.
+                {
+                    /* Set RFM69 module in standby mode to discard new data while
+                       processing. */
+                    RFM69_SetMode(OP_MODE_STANDBY);
+                    
+                    /* Will send 3 bytes. Own node address + RSSI + temperature */
+                    
+                    #ifdef COMPILE_FOR_SLAVE_1
+                        rfdatabytes[0] = 100;
+                    #endif
+                    
+                    #ifdef COMPILE_FOR_SLAVE_2
+                        rfdatabytes[0] = 200;
+                    #endif
+                    
+                    rfdatabytes[1] = rssi;
+                    rfdatabytes[2] = RFM69_GetTemperature();
+
+                    RFM69_DataPacket_TX(rfdatabytes, 64);
+
+                    /* Return to RX state. */
+                    RFM69_SetMode(OP_MODE_RX);
+
+                }; break;
+            }
+    		
+    		TerminalSend_Slave();
+        }   
+    
+    #endif
 }
 
 /* ************************************************************************* */

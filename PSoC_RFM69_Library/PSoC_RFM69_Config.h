@@ -13,7 +13,7 @@
 *   - Support only for RFM69 module (not H, high power module).
 *   - Only FSK modulation.
 *   - Fixed length packet.
-*   - PSOC4 and PSCO4M supported.
+*   - PSOC4 and PSOC4M supported.
 *
 *   TODO's:
 *       - add support for H module.
@@ -80,7 +80,7 @@
     
     Comment this line if you don´t want to use hardware reset.
 */    
-//#define mmRESET_PIN(value)      RFM_RESET_Write(value)
+#define mmRESET_PIN(value)      RFM_RESET_Write(value)
     
 /*******************************************************************************
 *   RFM69 configuration.
