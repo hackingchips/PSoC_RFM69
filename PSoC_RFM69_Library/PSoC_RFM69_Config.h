@@ -68,7 +68,8 @@
         - if using another gpio pint: SPI_SS_Write.    
 */    
 #define mmSPI_SS_Write(value)   SPI_ss0_m_Write(value)    
-
+//#define mmSPI_SS_Write(value)     SPI_SS_Write(value)
+    
 /*******************************************************************************
 *   Hardware reset.
 *******************************************************************************/
@@ -80,11 +81,20 @@
     
     Comment this line if you don´t want to use hardware reset.
 */    
-#define mmRESET_PIN(value)      RFM_RESET_Write(value)
+//#define mmRESET_PIN(value)      RFM_RESET_Write(value)
     
 /*******************************************************************************
 *   RFM69 configuration.
-*******************************************************************************/    
+*******************************************************************************/  
+    
+/* *** Type if RFM module *** 
+    Select here the type of module you are using.
+        
+    Comment the line if you are using a regular module.
+    Uncomment the line if you are using high power (H) module.
+*/    
+    
+#define RFM69_HVARIANT 
     
 /* *** Packet length mode *** 
     (do not change this. For future use. At this time, only fixed length is supported.)
@@ -102,7 +112,7 @@
     This value can be changed at run time, but this doesn't mean it is the same
     as the variable length packet mode.
     Read datasheet to be sure about differences between fixed length and variable length
-    packet modes and waht is the limit of packet length depending if you are using AES 
+    packet modes and what is the limit of packet length depending if you are using AES 
     encryption and/or address filtering.
 */     
     
@@ -156,10 +166,13 @@
     
     POWER_LEVEL     Power level (minimun 0, maximun 31).
     
-    Output power in dBm = -18dBm + POWER_LEVEL. 
+    Regular module. Output power in dBm = -18dBm + POWER_LEVEL. 
+    H Variant. Output powerin dBm = -11dBm + POWER_LEVEL
 */       
     
-#define POWER_LEVEL             31  // Max 31. Output power = -18dBm + POWER_LEVEL     
+#define POWER_LEVEL             31  // Max 31. 
+                                    // Regular module. Output power = -18dBm + POWER_LEVEL
+                                    // H Variant. Output power = -11dBm + POWER_LEVEL
     
 /* *** CRC ***
     

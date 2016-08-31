@@ -28,7 +28,7 @@
        mode.*/
     
 //#define TEST_WITH_ENCRYPTION
-#define TEST_USING_INTERRUPTS    
+//#define TEST_USING_INTERRUPTS    
     
 /* ************************************************************************* */    
     

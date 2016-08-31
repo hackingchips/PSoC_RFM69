@@ -301,14 +301,14 @@ void TerminalSend_Master()
 {
     UART_UartPutString("\nPSoC RFM69 Test... PSoC 4/4M... MASTER\n\n");
     UART_UartPutString("Options:\n");    
-    UART_UartPutString("\tA - Slave 1: Toggle red led.\n");
-    UART_UartPutString("\tB - Slave 1: Toggle green led.\n");
-    UART_UartPutString("\tC - Slave 1: Toggle blue led.\n");
-    UART_UartPutString("\tD - Slave 2: Toggle red led.\n");
-    UART_UartPutString("\tE - Slave 2: Toggle green led.\n");
-    UART_UartPutString("\tF - Slave 2: Toggle blue led.\n");
-    UART_UartPutString("\t1 - Slave 1: Read from...\n");
-    UART_UartPutString("\t2 - Slave 2: Read from...\n");
+    UART_UartPutString("\t1 - Slave 1: Toggle red led.\n");
+    UART_UartPutString("\t2 - Slave 1: Toggle green led.\n");
+    UART_UartPutString("\t3 - Slave 1: Toggle blue led.\n");
+    UART_UartPutString("\t4 - Slave 2: Toggle red led.\n");
+    UART_UartPutString("\t5 - Slave 2: Toggle green led.\n");
+    UART_UartPutString("\t6 - Slave 2: Toggle blue led.\n");
+    UART_UartPutString("\tA - Slave 1: Read from...\n");
+    UART_UartPutString("\tB - Slave 2: Read from...\n");
     UART_UartPutString("\t9 - Read this (master) temperature.\n");    
     UART_UartPutString("\t? - This menu.\n\n");   
     UART_UartPutString("\nSelect test :> ");    

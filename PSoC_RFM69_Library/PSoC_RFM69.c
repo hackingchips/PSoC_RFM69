@@ -28,11 +28,20 @@
 #include "PSoC_RFM69.h"
 #include "PSoC_RFM69_Config.h"
 
-/* Macro name : mSPI_WAIT_TXDONE.
-   Description: Wait until SPI Tx have finished.
-*/  
-#define mSPI_WAIT_TXDONE()      while(0u == (SPI_GetMasterInterruptSource() & SPI_INTR_MASTER_SPI_DONE)) {} \
-                                SPI_ClearMasterInterruptSource(SPI_INTR_MASTER_SPI_DONE);
+#if (CY_PSOC4) 
+    /* Macro name : mSPI_WAIT_TXDONE. (PSOC4/4M)
+       Description: Wait until SPI Tx have finished.
+    */  
+    #define mSPI_WAIT_TXDONE()      while(0u == (SPI_GetMasterInterruptSource() & SPI_INTR_MASTER_SPI_DONE)) {} \
+                                    SPI_ClearMasterInterruptSource(SPI_INTR_MASTER_SPI_DONE);
+#endif
+
+#if (CY_PSOC5LP)
+    /* Macro name : mSPI_WAIT_TXDONE. (PSOC%LP)
+       Description: Wait until SPI Tx have finished.
+    */                                 
+    #define mSPI_WAIT_TXDONE()      while (SPI_GetTxBufferSize())    
+#endif    
 
 /* Macro name : mRFM69_WaitModeReady.
    Description: Wait until RFM69 module operation mode have changed.
@@ -42,6 +51,7 @@
 /*******************************************************************************
 *   Function prototypes.
 *******************************************************************************/
+void RFM69_Set_HMode(uint8 mode);
 uint8 RFM69_GetRSSI();
 uint8 RFM69_Register_Read(uint8 reg_addr);
 void RFM69_Register_Write(uint8 reg_addr, uint8 reg_value);
@@ -215,12 +225,65 @@ void RFM69_SetMode(uint8 mode)
        If operation mode = TX, then set DIO0 for interrupt when PacketSent. 
     */
     if (mode == OP_MODE_RX)
+    {
+        #ifdef RFM69_HVARIANT
+            RFM69_Set_HMode(0);
+        #endif
+        
         RFM69_Register_Write(REG_DIOMAPPING_1, 0x40);
+    }
     else if (mode == OP_MODE_TX)
+    {
+        #ifdef RFM69_HVARIANT
+            RFM69_Set_HMode(1);
+        #endif        
+        
         RFM69_Register_Write(REG_DIOMAPPING_1, 0x00);
+    }
     
 	RFM69_Register_Write(REG_OPMODE, mode);
     mRFM69_WaitModeReady();
+}
+
+/*******************************************************************************
+* Function Name: RFM69_Set_H_Mode
+********************************************************************************
+*
+* Summary:
+*  For high power variant of RFM69 modules.
+*  Changes the mode of the module from low power to high power or viceversa.
+*
+* Parameters:
+*  mode:        new operating mode.
+*
+* Return:
+*  none
+*
+*******************************************************************************/
+void RFM69_Set_HMode(uint8 mode)
+{
+    uint8 regval = RFM69_Register_Read(REG_PALEVEL);
+    
+    if (mode == 1)      // H mode for H modules
+    {
+        RFM69_Register_Write(REG_OCP, 0x0F);
+        
+        regval = (regval & 0x1F) | 0x60;    // turn off PA0, turn on PA1 & PA2
+        RFM69_Register_Write(REG_PALEVEL, regval);
+        
+        RFM69_Register_Write(REG_TESTPA_1, 0x5D);
+        RFM69_Register_Write(REG_TESTPA_2, 0x7C);
+    }
+    else if (mode == 0) // normal modules and RX mode.
+    {
+        //RFM69_Register_Write(REG_OCP, 0x10);
+        
+        regval = (regval & 0x1F) | 0x80;    // turn off PA1 & PA2, turn on PA0
+        RFM69_Register_Write(REG_PALEVEL, regval);
+                
+        RFM69_Register_Write(REG_TESTPA_1, 0x55);
+        RFM69_Register_Write(REG_TESTPA_2, 0x70);
+    }    
 }
 
 /*******************************************************************************
@@ -589,10 +652,10 @@ int RFM69_DataPacket_RX(uint8 *buffer, uint8 *rssi)
     
     for (loop = 0; loop < fifolength; loop++)
     {
-        SPI_SpiUartWriteTxData(0x00);
+        mmSPI_SpiUartWriteTxData(0x00);
         mSPI_WAIT_TXDONE();
         
-    	buffer[loop] = SPI_SpiUartReadRxData();
+    	buffer[loop] = mmSPI_SpiUartReadRxData();
     }
 
     CyDelayUs(SS_DELAY);

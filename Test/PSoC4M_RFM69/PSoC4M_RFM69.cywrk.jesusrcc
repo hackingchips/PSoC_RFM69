@@ -264,6 +264,7 @@
 <name v="..\..\PSoC_RFM69_Library\PSoC_RFM69.c" />
 <name v=".\PSoC4M_RFM69.cydsn\Generated_Source\PSoC4\SPI_SPI_UART.c" />
 <name v="..\..\PSoC_RFM69_Library\PSoC_RFM69_Config.h" />
+<name v=".\PSoC4M_RFM69.cydsn\main.h" />
 </OpenDocs>
 <config v="" />
 <AutoUpdate v="true" />
