@@ -15,4 +15,4 @@
 * Development kits above mentioned.
 * RFM69CW and RFM69HCW radio modules for 433Mhz (these are the modules i have, library should work for other frequency modules too).
 
-MORE INFO ASAP.
+http://hackingchips.com/libreria-rfm69-para-micros-psoc/
